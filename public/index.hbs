@@ -6,76 +6,53 @@
       ::placeholder{
         color: #588FE8;
       }
+      ::-webkit-scrollbar{
+        background-color: white
+      }
+      ::-webkit-scrollbar-thumb{
+        background-color: gray;
+        width: 2px;
+        border-radius: 20px;
+      }
     </style>
   </head>
   <body style="background-color: rgb(88, 143, 232); margin: 0px; font-family: open sans">
-    <button style="width: 20px; position: absolute; top: 5px; left:5px; width: 150px; height: 30px; border-radius: 7px; color: #588FE8; background-color: white; text-align: center; font-family: open sans; border: none; margin: 10px;" onclick="resetCashe()">Reset Data Cashe</button>
+    <button style="width: 20px; position: absolute; top: 5px; left:5px; width: 150px; height: 30px; border-radius: 7px; color: #588FE8; background-color: white; text-align: center; font-family: open sans; border: none; margin: 10px;" onclick="resetCashe()">Reset Data Cache</button>
     <center>
     <div id="msg-wrapper" style="width: 300px; height: 550px; border-radius: 15px; box-shadow: 0 0 20px rgba(88, 143, 232, 0.4); position: absolute; top: 50%;margin-top: -275px; left: 50%; margin-left: -150px; display: flex; flex-direction: column; background-color: white;">
       <img src="https://docs.google.com/drawings/d/e/2PACX-1vRoanSP0P69dd6KsuqqU_-fuVfWRyQDq53_Zam6mKQHo21nYQiBrjMjaUNUV7-CjVPfsZ04TJSFQgZl/pub?w=1353&h=188" style="width: 85%; margin-top: 15px; margin-bottom: 15px;">
       <input id="clientName" type="text" placeholder="Your Name" style="width: 90%; height: 35px; border-radius: 15px; background-color: transparent; text-align: center;color: #588FE8; border: 1px solid #588FE8; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">
-      <div id="posts" style="flex-grow: 1; width: 80%; margin-left: 8%; text-align: left; padding-left: 10px;"></div>
+      <div id="posts" style="height: 390px; overflow: auto; margin-bottom: 10px; width: 80%; margin-left: 8%; text-align: left; padding-left: 10px;"></div>
+    <form id="message-container">
       <input id="postContent" type="text" placeholder="Type your post" style="width: 90%; height: 35px; border-radius: 15px; background-color: transparent; text-align: center;color: #588FE8; border: 1px solid #588FE8; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">
-      <button onclick="postNotes(document.getElementById('postContent').value)" style="width: 90%; height: 35px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">Post your post</button>
-      <button onclick="loadPosts()" style="width: 90%; height: 35px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">Load all new posts</button>
+      <button type="submit" style="width: 90%; height: 35px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">Post your post</button>
+    </form>
     </div>
     </center>
   </body>
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    io.on('browserReload', () => {
-      window.location = "https://AirMsg--flightdude737.repl.co"
+    var socket = io()
+    var prompt = prompt("What is your name?")
+    appendMessage(prompt)
+    const messageContainer = document.getElementById('posts')
+    const messageForm = document.getElementById('message-container')
+    const messageInput = document.getElementById('postContent')
+    socket.on('chat-message', (data) => {
+      appendMessage(data)
     })
-    {{ runScript }}
-    function postNotes(content){
-      if (document.getElementById("clientName").value == "") {
-        alert("You must provide a username.")
-      } else {
-        document.getElementById("clientName").value == "postContent"
-        fetch('https://airmsg--flightdude737.repl.co/post?content=' + content).then((response) => {
-          response.json().then((data) => {
-            var clientName = document.getElementById("clientName").value
-            var viewedData = data.recentPost
-            var newPost = document.createElement("p")
-            newPost.innerHTML = viewedData
-            newPost.style.width = "auto"
-            newPost.style.height = "auto"
-            newPost.style.padding = "5px"
-            newPost.style.paddingLeft = "15px"
-            newPost.style.backgroundColor = "#588FE8"
-            newPost.style.borderRadius = "25px"
-            newPost.style.color = "white"
-            document.getElementById('posts').appendChild(newPost)
-          })
-        })
-      }
-    }
 
-    function resetCashe(){
-      window.location = "https://airmsg.flightdude737.repl.co/cleardata"
-    }
-    loadPosts()
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const message = messageInput.value
+      socket.emit('send-chat-message', message)
+      messageInput.value = ''
+    })
 
-    function loadPosts(){
-      document.getElementById('posts').innerHTML = '';
-      var clientName = document.getElementById("clientName").value
-      var index = -1;
-      fetch('https://airmsg--flightdude737.repl.co/reload').then((response) => {
-        response.json().then((data) => {
-          data.forEach(() => {
-            index++
-            var newPost = document.createElement("p")
-            newPost.innerHTML = data[index].post
-            newPost.style.width = "auto"
-            newPost.style.height = "auto"
-            newPost.style.padding = "5px"
-            newPost.style.paddingLeft = "15px"
-            newPost.style.backgroundColor = "#588FE8"
-            newPost.style.borderRadius = "25px"
-            newPost.style.color = "white"
-            document.getElementById('posts').appendChild(newPost)
-          })
-        })
-      })
+    function appendMessage(message) {
+      const messageElement = document.createElement("div")
+      messageElement.textContent = message
+      messageContainer.append(messageElement)
     }
   </script>
 </html>
