@@ -17,31 +17,54 @@
     </style>
   </head>
   <body style="background-color: rgb(88, 143, 232); margin: 0px; font-family: open sans">
-    <button style="width: 20px; position: absolute; top: 5px; left:5px; width: 150px; height: 30px; border-radius: 7px; color: #588FE8; background-color: white; text-align: center; font-family: open sans; border: none; margin: 10px;" onclick="resetCashe()">Reset Data Cache</button>
+    <button style="width: 20px; position: absolute; top: 5px; left:5px; width: 150px; height: 30px; border-radius: 7px; color: #588FE8; background-color: white; text-align: center; font-family: open sans; border: none; margin: 10px;" onclick="alert('Version 1.6.8')">Version 1.6.8</button>
     <center>
     <div id="msg-wrapper" style="width: 300px; height: 550px; border-radius: 15px; box-shadow: 0 0 20px rgba(88, 143, 232, 0.4); position: absolute; top: 50%;margin-top: -275px; left: 50%; margin-left: -150px; display: flex; flex-direction: column; background-color: white;">
       <img src="https://docs.google.com/drawings/d/e/2PACX-1vRoanSP0P69dd6KsuqqU_-fuVfWRyQDq53_Zam6mKQHo21nYQiBrjMjaUNUV7-CjVPfsZ04TJSFQgZl/pub?w=1353&h=188" style="width: 85%; margin-top: 15px; margin-bottom: 15px;">
-      <input id="clientName" type="text" placeholder="Your Name" style="width: 90%; height: 35px; border-radius: 15px; background-color: transparent; text-align: center;color: #588FE8; border: 1px solid #588FE8; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">
       <div id="posts" style="height: 390px; overflow: auto; margin-bottom: 10px; width: 80%; margin-left: 8%; text-align: left; padding-left: 10px;"></div>
     <form id="message-container">
       <input id="postContent" type="text" placeholder="Type your post" style="width: 90%; height: 35px; border-radius: 15px; background-color: transparent; text-align: center;color: #588FE8; border: 1px solid #588FE8; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">
       <button type="submit" style="width: 90%; height: 35px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">Post your post</button>
     </form>
     </div>
+    <div id="overlay-nickname-wrapper" style="width: 100vw; height: 100vh;background-color: rgba(0, 0, 0, 0.4); position: fixed; top: 0px; left: 0px; z-index: 10;">
+      <div style="width: 250px; height: 150px; background-color: white; position: absolute; top: 50%; margin-top: -120px; left: 50%; margin-left: -140px; border-radius: 7px; padding: 15px;">
+        <h1 style="font-family: open sans; font-size: 20px; color: #588FE8; margin-bottom: 5px;">Welcome to AirMessage!</h1>
+        <form id="username-check">
+          <input id="clientName" type="text" style="width: 230px; border: none; border-bottom: 3px solid #588FE8; padding: 10px; font-family: open sans; padding-left: 2px; outline: none;" placeholder="What's your username?">
+          <button type="submit" style="width: 200px; height: 30px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px; margin-top: 20px;">Open Chat</button>
+        </form>
+      </div>
+    </div>
     </center>
   </body>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io()
-    var prompt = prompt("What is your name?")
-    appendMessage(prompt)
     const messageContainer = document.getElementById('posts')
     const messageForm = document.getElementById('message-container')
+    const usernameForm = document.getElementById('username-check')
     const messageInput = document.getElementById('postContent')
+    usernameForm.addEventListener('submit', (e) => {
+      e.preventDefault()
+      var name = document.getElementById('clientName').value
+      socket.emit('new-user', name)
+      appendMessage('You joined')
+      document.getElementById('overlay-nickname-wrapper').style.display = "none";
+    })
+
     socket.on('chat-message', (data) => {
       appendMessage(data)
     })
 
+    socket.on('user-connected', (name) => {
+      appendMessage(`${name} joined.`)
+    })
+
+    socket.on('user-disconnected', (name) => {
+      appendMessage(`${name} left the chat`)
+    })
+  
     messageForm.addEventListener('submit', (e) => {
       e.preventDefault()
       const message = messageInput.value
@@ -50,7 +73,7 @@
     })
 
     function appendMessage(message) {
-      const messageElement = document.createElement("div")
+      const messageElement = document.createElement("p")
       messageElement.textContent = message
       messageContainer.append(messageElement)
     }
