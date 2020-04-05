@@ -22,6 +22,7 @@
     <div id="msg-wrapper" style="width: 300px; height: 550px; border-radius: 15px; box-shadow: 0 0 20px rgba(88, 143, 232, 0.4); position: absolute; top: 50%;margin-top: -275px; left: 50%; margin-left: -150px; display: flex; flex-direction: column; background-color: white;">
       <img src="https://docs.google.com/drawings/d/e/2PACX-1vRoanSP0P69dd6KsuqqU_-fuVfWRyQDq53_Zam6mKQHo21nYQiBrjMjaUNUV7-CjVPfsZ04TJSFQgZl/pub?w=1353&h=188" style="width: 85%; margin-top: 15px; margin-bottom: 15px;">
       <div id="posts" style="height: 390px; overflow: auto; margin-bottom: 10px; width: 80%; margin-left: 8%; text-align: left; padding-left: 10px;"></div>
+      <p style="font-size: 13px; display: none;" id="typing">Someone is typing...</p>
     <form id="message-container">
       <input id="postContent" type="text" placeholder="Type your post" style="width: 90%; height: 35px; border-radius: 15px; background-color: transparent; text-align: center;color: #588FE8; border: 1px solid #588FE8; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">
       <button type="submit" style="width: 90%; height: 35px; border-radius: 15px; background-color: #588FE8; color: white; border: none; box-shadow: 0 0 10px rgba(88, 143, 232, 0.4); margin-bottom: 10px;">Post your post</button>
@@ -49,32 +50,52 @@
       e.preventDefault()
       var name = document.getElementById('clientName').value
       socket.emit('new-user', name)
-      appendMessage('You joined')
+      appendMessage('You joined', name)
       document.getElementById('overlay-nickname-wrapper').style.display = "none";
     })
 
-    socket.on('chat-message', (data) => {
-      appendMessage(data)
+    messageInput.addEventListener('keyup', () => {
+      var name = document.getElementById('clientName').value
+      socket.emit('user-typing', name)
+    })
+
+    socket.on('chat-message', (data, name) => {
+      document.getElementById('typing').style.display = "none"
+      appendMessage(data, name)
+    })
+
+    socket.on('user-is-typing', (name) => {
+      document.getElementById('typing').style.display = "block"
+      document.getElementById('typing').innerHTML = name + " is typing..."
     })
 
     socket.on('user-connected', (name) => {
-      appendMessage(`${name} joined.`)
+      appendMessage(`${name} joined.`, name)
     })
 
     socket.on('user-disconnected', (name) => {
-      appendMessage(`${name} left the chat`)
+      appendMessage(`${name} left the chat`, name)
     })
   
     messageForm.addEventListener('submit', (e) => {
       e.preventDefault()
       const message = messageInput.value
-      socket.emit('send-chat-message', message)
+      var name = document.getElementById('clientName').value
+      socket.emit('send-chat-message', message, name)
       messageInput.value = ''
     })
 
-    function appendMessage(message) {
+    function appendMessage(message, name) {
+      const clientName = document.createElement('p')
+      clientName.innerHTML = name
+      clientName.style.color = "#588FE8"
+      clientName.style.marginTop = "20px"
+      clientName.style.marginBottom = "3px"
+      clientName.style.fontSize = "13px"
+      messageContainer.append(clientName)
       const messageElement = document.createElement("p")
       messageElement.textContent = message
+      messageElement.style.marginTop = "0px"
       messageContainer.append(messageElement)
     }
   </script>

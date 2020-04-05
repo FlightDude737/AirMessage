@@ -14,8 +14,11 @@ io.on('connection', (socket) => {
   socket.on('new-user', (name) => {
     socket.broadcast.emit('user-connected', name)
   })
-  socket.on('send-chat-message', (message) => {
-    io.emit('chat-message', message)
+  socket.on('send-chat-message', (message, name) => {
+    io.emit('chat-message', message, name)
+  })
+  socket.on('user-typing', (name) => {
+    socket.broadcast.emit('user-is-typing', name)
   })
 })
 
